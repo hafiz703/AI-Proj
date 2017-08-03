@@ -102,7 +102,7 @@ RESIZED_INPUT_TENSOR_NAME = 'ResizeBilinear:0'
 MAX_NUM_IMAGES_PER_CLASS = 2 ** 27 - 1  # ~134M
 
 
-def create_image_lists(image_dir, split_dir, magnification):
+def create_image_lists(image_dir):
   """Builds a list of training images from the file system.
 
   Analyzes the sub folders in the image directory, splits them into stable
@@ -122,51 +122,52 @@ def create_image_lists(image_dir, split_dir, magnification):
   if not gfile.Exists(image_dir):
     print("Training Image directory '" + image_dir + "' not found.")
     return None
+
   result = {}
-  directory_list = [train_dir, val_dir, test_dir]
-  training_images0 = []
-  testing_images0 = []
-  validation_images0 = []
-  training_images1 = []
-  testing_images1 = []
-  validation_images1 = []
-  cwd = os.path.dirname(os.path.realpath(__file__))
-  train_file = os.path.join(cwd,split_dir,magnification+"_train.txt")
-  val_file = os.path.join(cwd,split_dir,magnification+"_val.txt")
-  test_file = os.path.join(cwd,split_dir,magnification+"_test.txt")
-  with open(train_file) as f:
-    for line in f:
-      l = line.rstrip().split(" ")
-        if l[1] == 1:
-          training_images_malignant.append(l[0])
+
+  sub_dirs = [x[0] for x in gfile.Walk(image_dir)]
+  # The root directory comes first, so skip it.
+  is_root_dir = True
+  for sub_dir in sub_dirs:
+    if is_root_dir:
+      is_root_dir = False
+      continue
+    extensions = ['jpg', 'jpeg', 'JPG', 'JPEG']
+    file_list = []
+    dir_name = os.path.basename(sub_dir)
+    if dir_name == image_dir:
+      continue
+    print("Looking for images in '" + dir_name + "'")
+    for extension in extensions:
+      file_glob = os.path.join(image_dir, dir_name, '*.' + extension)
+      file_list.extend(gfile.Glob(file_glob))
+    if not file_list:
+      print('No files found')
+      continue
+    if len(file_list) < 20:
+      print('WARNING: Folder has less than 20 images, which may cause issues.')
+    elif len(file_list) > MAX_NUM_IMAGES_PER_CLASS:
+      print('WARNING: Folder {} has more than {} images. Some images will '
+            'never be selected.'.format(dir_name, MAX_NUM_IMAGES_PER_CLASS))
+    label_name = re.sub(r'[^a-z0-9]+', ' ', dir_name.lower())
+    training_images = []
+    testing_images = []
+    validation_images = []
+    for file_name in file_list:
+        base_name = os.path.basename(file_name)
+        if "_train" in base_name:
+            training_images.append(base_name)
+        elif "_test" in base_name:
+            testing_images.append(base_name)
         else:
-          training_images_benign.append(l[0])
-  with open(val_file) as f:
-    for line in f:
-      l = line.rstrip().split(" ")
-        if l[1] == 1:
-          validation_images_malignant.append(l[0])
-        else:
-          validation_images_benign.append(l[0])
-  with open(test_file) as f:
-    for line in f:
-      l = line.rstrip().split(" ")
-        if l[1] == 1:
-          testing_images_malignant.append(l[0])
-        else:
-          testing_images_benign.append(l[0])
-  result["1"] = {
-    'dir': "",
-    'training': training_images1,
-    'testing': testing_images1,
-    'validation': validation_images1,
-  }
-  result["0"] = {
-    'dir': "",
-    'training': training_images0,
-    'testing': testing_images0,
-    'validation': validation_images0,
-  }
+            validation_images.append(base_name)
+    result[label_name] = {
+      'dir': dir_name,
+      'training': training_images,
+      'testing': testing_images,
+      'validation': validation_images,
+    }
+
   return result
 
 
@@ -198,8 +199,8 @@ def get_image_path(image_lists, label_name, index, image_dir, category):
                      label_name, category)
   mod_index = index % len(category_list)
   base_name = category_list[mod_index]
-  # sub_dir = label_lists['dir']
-  full_path = os.path.join(image_dir, base_name)
+  sub_dir = label_lists['dir']
+  full_path = os.path.join(image_dir, sub_dir, base_name)
   return full_path
 
 
@@ -765,7 +766,7 @@ def main(_):
       create_inception_graph())
 
   # Look at the folder structure, and create lists of all the images.
-  image_lists = create_image_lists(FLAGS.image_dir, FLAGS.split_dir, FLAGS.magnification)
+  image_lists = create_image_lists(FLAGS.image_dir)
   class_count = len(image_lists.keys())
   if class_count == 0:
     print('No valid folders of images found at ' + FLAGS.image_dir)
@@ -895,19 +896,7 @@ if __name__ == '__main__':
       '--image_dir',
       type=str,
       default='',
-      help='Path to folders of images.'
-  )
-  parser.add_argument(
-      '--magnification',
-      type=str,
-      default='',
-      help='Magnification of dataset to use.'
-  )
-  parser.add_argument(
-      '--split_dir',
-      type=str,
-      default='',
-      help='Location of txt files that specify split of dataset.'
+      help='Path to folders of ALL images.'
   )
   parser.add_argument(
       '--output_graph',
@@ -939,6 +928,18 @@ if __name__ == '__main__':
       default=0.01,
       help='How large a learning rate to use when training.'
   )
+  # parser.add_argument(
+  #     '--testing_percentage',
+  #     type=int,
+  #     default=10,
+  #     help='What percentage of images to use as a test set.'
+  # )
+  # parser.add_argument(
+  #     '--validation_percentage',
+  #     type=int,
+  #     default=10,
+  #     help='What percentage of images to use as a validation set.'
+  # )
   parser.add_argument(
       '--eval_step_interval',
       type=int,
@@ -1045,12 +1046,10 @@ if __name__ == '__main__':
   FLAGS, unparsed = parser.parse_known_args()
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
-    # python retrain2.py \
-    # --bottleneck_dir=bottlenecks_original \
-    # --model_dir=inception_3 \
-    # --summaries_dir=training_summaries_3/long \
-    # --output_graph=retrained_graph_3.pb \
-    # --output_labels=retrained_labels_3.txt \
-    # --magnification=100X \
-    # --split_dir=train_val_test_60_12_28/non_shuffled/split1 \
-    # --image_dir=/home/ubuntu/workspace_ami/breakhis_v1
+    # python retrain3.py \
+    # --bottleneck_dir=bottlenecks_6 \
+    # --model_dir=inception_6 \
+    # --summaries_dir=training_summaries_6/long \
+    # --output_graph=retrained_graph_6.pb \
+    # --output_labels=retrained_labels_6.txt \
+    # --image_dir=100X

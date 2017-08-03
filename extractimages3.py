@@ -19,11 +19,11 @@ with open(train_file) as f:
         if l[1] == "1":
             basename = os.path.basename(imageloc)
             copy(imageloc, "100X/malignant")
-            os.rename("100X/malignant/"+basename, "100X/malignant/"+basename[:-4]+"_train.png")
+            os.rename("100X/malignant/"+basename, "100X/malignant/"+basename[:-4]+"_train.jpg")
         else:
             basename = os.path.basename(imageloc)
             copy(imageloc, "100X/benign")
-            os.rename("100X/benign/"+basename, "100X/benign/"+basename[:-4]+"_train.png")
+            os.rename("100X/benign/"+basename, "100X/benign/"+basename[:-4]+"_train.jpg")
 
 
 with open(val_file) as f:
@@ -33,11 +33,11 @@ with open(val_file) as f:
         if l[1] == "1":
             basename = os.path.basename(imageloc)
             copy(imageloc, "100X/malignant")
-            os.rename("100X/malignant/"+basename, "100X/malignant/"+basename[:-4]+"_val.png")
+            os.rename("100X/malignant/"+basename, "100X/malignant/"+basename[:-4]+"_val.jpg")
         else:
             basename = os.path.basename(imageloc)
             copy(imageloc, "100X/benign")
-            os.rename("100X/benign/"+basename, "100X/benign/"+basename[:-4]+"_val.png")
+            os.rename("100X/benign/"+basename, "100X/benign/"+basename[:-4]+"_val.jpg")
 
 with open(test_file) as f:
     for line in f:
@@ -46,8 +46,8 @@ with open(test_file) as f:
         if l[1] == "1":
             basename = os.path.basename(imageloc)
             copy(imageloc, "100X/malignant")
-            os.rename("100X/malignant/"+basename, "100X/malignant/"+basename[:-4]+"_test.png")
+            os.rename("100X/malignant/"+basename, "100X/malignant/"+basename[:-4]+"_test.jpg")
         else:
             basename = os.path.basename(imageloc)
             copy(imageloc, "100X/benign")
-            os.rename("100X/benign/"+basename, "100X/benign/"+basename[:-4]+"_test.png")
+            os.rename("100X/benign/"+basename, "100X/benign/"+basename[:-4]+"_test.jpg")
