@@ -140,6 +140,6 @@ if __name__=='__main__':
     for img_dir in directories:
         files = os.listdir(img_dir)
         for filename in files:
-            if filename.endswith("_train.jpg"):
+            if filename.endswith("_val.jpg"):
                 img_name = os.path.splitext(filename)[0]
                 augment_image(os.path.join(img_dir, img_name))

@@ -1036,8 +1036,7 @@ if __name__ == '__main__':
   )
   parser.add_argument(
       '--random_brightness',
-      type=int,
-      default=0,
+      type=int
       help="""\
       A percentage determining how much to randomly multiply the training image
       input pixels up or down by.\
@@ -1047,9 +1046,9 @@ if __name__ == '__main__':
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
     # python retrain3.py \
-    # --bottleneck_dir=bottlenecks_6 \
-    # --model_dir=inception_6 \
-    # --summaries_dir=training_summaries_6/long \
-    # --output_graph=retrained_graph_6.pb \
-    # --output_labels=retrained_labels_6.txt \
-    # --image_dir=100X
+    # --bottleneck_dir=bottlenecks_11 \
+    # --model_dir=inception_11 \
+    # --summaries_dir=training_summaries_11/long \
+    # --output_graph=retrained_graph_11.pb \
+    # --output_labels=retrained_labels_11.txt \
+    # --image_dir=100X_split4

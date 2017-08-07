@@ -9,8 +9,9 @@ class LabelImage():
     def __init__(self, image_path, retrained_graph_path, retrained_labels_path):
         cwd = os.path.dirname(os.path.realpath(__file__))      #path to current file
         self.image_path = os.path.join(cwd, image_path)
-        self.retrained_graph_path = retrained_graph_path
-        self.retrained_labels_path = retrained_labels_path
+
+        self.retrained_graph_path = os.path.join(cwd,retrained_graph_path)
+        self.retrained_labels_path = os.path.join(cwd, retrained_labels_path)
 
     def run(self):
         # Read in the image_data
@@ -31,7 +32,7 @@ class LabelImage():
             softmax_tensor = sess.graph.get_tensor_by_name('final_result:0')
 
             prediction = sess.run(softmax_tensor, \
-                     {'DecodeJpeg\contents:0': image_data})
+                     {'DecodeJpeg/contents:0': image_data})
         return label_lines, prediction
 
 if __name__=='__main__':
@@ -44,4 +45,4 @@ if __name__=='__main__':
         score = predictions[0][node_id]
         print('%s (score = %.5f)' % (human_string, score))
 
-# python label_image.py testing/test.jpg retrained_graph_original.pb retrained_labels_original.txt
+# python label_image_noaugment.py SOB_B_TA-14-21978AB-100-017_train.jpg retrained_graph_original.pb retrained_labels_original.txt
